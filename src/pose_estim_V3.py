@@ -39,37 +39,42 @@ class combined_detection():
     def cvImage_Subscriber_Callback(self,data):
         try:
             self.color_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-            
+
         except CvBridgeError as e:
             print(e)
-        
-        try:
-            self.PIL_img = PIL.Image.fromarray(cv2.cvtColor(self.color_image,cv2.COLOR_BGR2RGB))
-            self.PIL_img,boxs = self.yolo.detect_image(self.PIL_img)
-            self.cv_img = cv2.cvtColor(np.array(self.PIL_img), cv2.COLOR_RGB2BGR)
-        except:
-            cv2.imshow('image',self.color_image)
-            # cv2.imshow('depth',self.depth_image)
         else:
-            cv2.imshow('image',self.cv_img)
-            # cv2.imshow('depth',self.depth_image)
-            
-            if self.num_of_people > len(boxs):
-                for i in range(len(boxs),self.num_of_people):
-                    cv2.destroyWindow('img{}'.format(i))
-            
-            self.num_of_people = len(boxs)
+            try:
+                self.PIL_img = PIL.Image.fromarray(cv2.cvtColor(self.color_image,cv2.COLOR_BGR2RGB))
+                self.PIL_img,boxs = self.yolo.detect_image(self.PIL_img)
+                self.cv_img = cv2.cvtColor(np.array(self.PIL_img), cv2.COLOR_RGB2BGR)
+            except:
+                cv2.imshow('image',self.color_image)
+                # cv2.imshow('depth',self.depth_image)
+            else:
+                cv2.imshow('image',self.cv_img)
+                # cv2.imshow('depth',self.depth_image)
+                
+                if self.num_of_people > len(boxs):
+                    for i in range(len(boxs),self.num_of_people):
+                        cv2.destroyWindow('img{}'.format(i))
+                
+                self.num_of_people = len(boxs)
 
-            if len(boxs) != 0:
-                for id, box in enumerate(boxs):
-                    try:
-                        cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
-                        cropped_img = cv2.resize(cropped_img,(500,500))
-                        cropped_img = self.detector.findPose(cropped_img,True)
-                        lmList = self.detector.findPosition(cropped_img,True)
-                        cv2.imshow('img{}'.format(id),cropped_img)
-                    except:
-                        pass
+                if len(boxs) != 0:
+                    for id, box in enumerate(boxs):
+                        try:
+                            cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
+                            cropped_img = cv2.resize(cropped_img,(500,500))
+                            cropped_img = self.detector.findPose(cropped_img,True)
+                            lmList = self.detector.findPosition(cropped_img,True)
+                            Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                            depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image)
+                            cv2.circle(cropped_img,(cx,cy), 5, (0,100,200),cv2.FILLED)
+                            cv2.putText(cropped_img,"depth: %.2f m" %(depth_of_human/1000),(350 ,350),cv2.FONT_HERSHEY_PLAIN,1,(0,0,128),3)
+                            cv2.putText(cropped_img,"gesture: " + str(Gesture),(380,350),cv2.FONT_HERSHEY_PLAIN,1,(0,0,128),3)
+                            cv2.imshow('img{}'.format(id),cropped_img)
+                        except:
+                            pass
 
         
         if cv2.waitKey(3) & 0xFF == ord('d'):
