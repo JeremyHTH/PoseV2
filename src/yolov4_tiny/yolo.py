@@ -25,8 +25,8 @@ class YOLO(object):
         #   验证集损失较低不代表mAP较高，仅代表该权值在验证集上泛化性能较好。
         #   如果出现shape不匹配，同时要注意训练时的model_path和classes_path参数的修改
         #--------------------------------------------------------------------------#
-        "model_path"        : 'yolov4_tiny/model_data/Human_and_injury_only(1).pth',
-        "classes_path"      : 'yolov4_tiny/model_data/human_class.txt',
+        "model_path"        : os.path.abspath('yolov4_tiny/model_data/Human_and_injury_only(1).pth'),
+        "classes_path"      : os.path.abspath('yolov4_tiny/model_data/human_class.txt'),
         #---------------------------------------------------------------------#
         #   anchors_path代表先验框对应的txt文件，一般不修改。
         #   anchors_mask用于帮助代码找到对应的先验框，一般不修改。
@@ -161,19 +161,19 @@ class YOLO(object):
                         image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
                                                     
             if results[0] is None: 
-                return image
+                return image , []
 
             top_label   = np.array(results[0][:, 6], dtype = 'int32')
             top_conf    = results[0][:, 4] * results[0][:, 5]
             top_boxes   = results[0][:, :4]
 
             out_result = np.array(results[0],dtype = 'int32')
-            print(results)
-            print(out_result)
+            # print(results)
+            # print(out_result)
         #---------------------------------------------------------#
         #   设置字体与边框厚度
         #---------------------------------------------------------#
-        font        = ImageFont.truetype(font='yolov4_tiny/model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        font        = ImageFont.truetype(font=os.path.abspath('yolov4_tiny/model_data/simhei.ttf'), size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         
         #---------------------------------------------------------#
@@ -195,7 +195,7 @@ class YOLO(object):
             draw = ImageDraw.Draw(image)
             label_size = draw.textsize(label, font)
             label = label.encode('utf-8')
-            print(label, top, left, bottom, right)
+            # print(label, top, left, bottom, right)
             
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])

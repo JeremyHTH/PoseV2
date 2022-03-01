@@ -24,6 +24,18 @@ def main():
     
     cv2.waitKey(0)
 
+def testing():
+    yolo = YOLO()
+
+    cv_img = cv2.imread('testing_source/human_657.jpg')
+    PIL_img = Image.fromarray(cv2.cvtColor(cv_img,cv2.COLOR_BGR2RGB))
+    new_img,data = yolo.detect_image(PIL_img)
+    PIL_img.show()
+    cv_img = cv2.cvtColor(np.array(PIL_img), cv2.COLOR_RGB2BGR)
+    cv2.imshow('img',cv_img)
+    cv2.waitKey(0)
+
+
 
 def _get_classlist(path):
     classlist = []
@@ -44,4 +56,4 @@ def PIL2CV(img):
     return cv_Img[:,:,::-1].copy()
 
 if __name__ == "__main__":
-    main()
+    testing()
