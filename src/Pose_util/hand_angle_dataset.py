@@ -56,7 +56,7 @@ class hand_angle_dataset:
         left_coeff = self.trapezium_fuzzy(left_different,0,10,20)
         right_coeff = self.trapezium_fuzzy(right_different,0,10,20)
         
-        print(left_angle1,left_angle2,right_angle1,right_angle2)
+        # print(left_angle1,left_angle2,right_angle1,right_angle2)
 
         straight = True if (left_coeff*right_coeff > 0.4) else False
 
@@ -92,13 +92,13 @@ class hand_angle_dataset:
 
         return post
 
-    def depth_calculation(self,data,depth_image):
+    def depth_calculation(self,data,depth_image,x_offset = 0, y_offset = 0):
         if(len(data) >20):
             centre_x = int((data[11][1] + data[12][1] + data[23][1] + data[24][1])/4)
             centre_y = int((data[11][2] + data[12][2] + data[23][2] + data[24][2])/4)
             dimension = depth_image.shape
             if (centre_x in range(0,dimension[1]) and centre_y in range(0,dimension[0])):
-                return self.depth_of_human.smoothed_data(depth_image[centre_y][centre_x]),centre_x,centre_y
+                return self.depth_of_human.smoothed_data(depth_image[centre_y+y_offset][centre_x+x_offset]),centre_x,centre_y
             else:
                 return -100,-1,-1   
         else:

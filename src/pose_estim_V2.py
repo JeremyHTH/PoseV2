@@ -3,14 +3,14 @@ from __future__ import print_function
 
 import cv2
 import time  
-import PoseModule as pm
+import Pose_util.PoseModule as pm
 import rospy
 import math
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
-from hand_angle_dataset import hand_angle_dataset
+from Pose_util.hand_angle_dataset     import hand_angle_dataset
 
 class gesture_detect:
     def __init__(self):

@@ -22,6 +22,9 @@ class combined_detection():
         self.depthImage_Subscriber = rospy.Subscriber('/camera/aligned_depth_to_color/image_raw',Image,self.depthImage_Subscriber_Callback)
         self.cameraInfo_subscriber = rospy.Subscriber('/camera/color/camera_info',CameraInfo,self.Info_Subscriber_Callback)
 
+        self.human_image_Publisher = rospy.Publisher('/detected_human',Image,queue_size=10)
+        self.human_gesture_Publisher = rospy.Publisher('/detected_human_gesture',String,queue_size=10)
+
         self.color_image = None
         self.depth_image = None
         self.image_length = None
@@ -39,6 +42,7 @@ class combined_detection():
     def cvImage_Subscriber_Callback(self,data):
         try:
             self.color_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            minimum_data = [-1,100000,-1]
 
         except CvBridgeError as e:
             print(e)
@@ -59,6 +63,7 @@ class combined_detection():
                         cv2.destroyWindow('img{}'.format(i))
                 
                 self.num_of_people = len(boxs)
+                
 
                 if len(boxs) != 0:
                     for id, box in enumerate(boxs):
@@ -68,14 +73,25 @@ class combined_detection():
                             cropped_img = self.detector.findPose(cropped_img,True)
                             lmList = self.detector.findPosition(cropped_img,True)
                             Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
-                            depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image)
+                            depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,box[1],box[0])
                             cv2.circle(cropped_img,(cx,cy), 5, (0,100,200),cv2.FILLED)
-                            cv2.putText(cropped_img,"depth: %.2f m" %(depth_of_human/1000),(350 ,350),cv2.FONT_HERSHEY_PLAIN,1,(0,0,128),3)
-                            cv2.putText(cropped_img,"gesture: " + str(Gesture),(380,350),cv2.FONT_HERSHEY_PLAIN,1,(0,0,128),3)
+                            cv2.putText(cropped_img,"depth: %.2f m" %(depth_of_human/1000),(320 ,450),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                            cv2.putText(cropped_img,"gesture: " + str(Gesture),(320,480),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                             cv2.imshow('img{}'.format(id),cropped_img)
+
+                            if depth_of_human < minimum_data[1]:
+                                minimum_data = [id,depth_of_human,Gesture,cropped_img]
+
                         except:
                             pass
-
+                
+                if minimum_data[0] != 100:
+                    try:
+                        rosimg = self.bridge.cv2_to_imgmsg(minimum_data[3],'bgr8')
+                        self.human_image_Publisher.publish(rosimg)
+                        self.human_gesture_Publisher.publish(minimum_data[1])
+                    except: 
+                        pass
         
         if cv2.waitKey(3) & 0xFF == ord('d'):
             print(self.color_image.shape)
