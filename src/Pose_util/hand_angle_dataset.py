@@ -62,9 +62,6 @@ class hand_angle_dataset:
 
         return left_coeff, right_coeff, straight
 
-
-
-
     def gesture_identify(self,left,right):
         post = None
         if right > 40 and right < 90:
@@ -117,3 +114,11 @@ class hand_angle_dataset:
             return (diff_to_centre-lower_length)/(upper_length - lower_length)
         else:
             return 0
+
+    def regulation_box(self,box,x_max,y_max):
+        top, left, bottom, right = box[:4]
+        top     = max(0, top)
+        left    = max(0, left)
+        bottom  = min(y_max, bottom)
+        right   = min(x_max, right)
+        return top, left, bottom, right
