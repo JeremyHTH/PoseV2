@@ -64,7 +64,7 @@ class combined_detection():
                             cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
                             cropped_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
                             avg = np.mean(cropped_img)
-                            depth_data.append(np.mean(cropped_img))
+                            depth_data.append(np.mean(avg))
 
                         except: 
                             print('detection{} error'.format(id))
@@ -82,11 +82,15 @@ class combined_detection():
                         lmList = self.detector.findPosition(cropped_img,True)
                         Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
                         depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
+                        cv2.putText(cropped_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        cv2.putText(cropped_img,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        cropped_img = cv2.resize(cropped_img,(500,500))
                     except:
                         print('pose detection error')
-                    cv2.imshow('img_detect'.format(id),cropped_img)
+
+                    cv2.imshow('img_detect',cropped_img)
                 
-                
+                print('depth: {} gesture: {}'.format(depth_of_human/1000,Gesture))
                 cv2.imshow('image',self.cv_img)
 
         if cv2.waitKey(30) & 0xFF == ord('d'):
