@@ -18,14 +18,14 @@ class poseDetector():
 
         self.mpDraw = mp.solutions.drawing_utils
         self.mpPose = mp.solutions.pose
-        # self.pose = self.mpPose.Pose(self.mode, self.complexity, self.smooth,self.segmentation, self.smoothSem, self.detectionCon, self.trackCon)
+        self.pose = self.mpPose.Pose(self.mode, self.complexity, self.smooth,self.segmentation, self.smoothSem, self.detectionCon, self.trackCon)
         # (self,
         #        static_image_mode=False,
         #        upper_body_only=False,
         #        smooth_landmarks=True,
         #        min_detection_confidence=0.5,
         #        min_tracking_confidence=0.5):
-        self.pose = self.mpPose.Pose(self.mode,self.segmentation,True,self.detectionCon,self.trackCon)
+        # self.pose = self.mpPose.Pose(self.mode,self.segmentation,True,self.detectionCon,self.trackCon)
 
     def findPose(self, img, draw =True):
         

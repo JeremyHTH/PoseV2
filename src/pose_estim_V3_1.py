@@ -75,22 +75,21 @@ class combined_detection():
                     minimum_index = 0
                     box = boxs[minimum_index] 
                     top,left,bottom,right = self.angle_data.regulation_box(box,self.image_length,self.image_width)
-                    print(minimum_index,top,left,bottom,right)
                     try:
                         cropped_img = self.color_image[top:bottom,left:right]
                         cropped_img = self.detector.findPose(cropped_img,True)
                         lmList = self.detector.findPosition(cropped_img,True)
                         Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
                         depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
-                        cv2.putText(cropped_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
-                        cv2.putText(cropped_img,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
-                        cropped_img = cv2.resize(cropped_img,(500,500))
+                        cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        cv2.putText(self.cv_img,"gesture" + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+
                     except:
                         print('pose detection error')
 
                     cv2.imshow('img_detect',cropped_img)
                 
-                print('depth: {} gesture: {}'.format(depth_of_human/1000,Gesture))
+                # print('depth: {} gesture: {}'.format(depth_of_human/1000,Gesture))
                 cv2.imshow('image',self.cv_img)
 
         if cv2.waitKey(30) & 0xFF == ord('d'):
