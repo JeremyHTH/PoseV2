@@ -59,16 +59,19 @@ class combined_detection():
                         try:
                             top,left,bottom,right = box[:4]
                             # cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
-                            centre_y = (top+bottom)//2
+                            centre_y = (top*3+bottom*2)//5
                             centre_x = (left+right)//2
                             cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
                             cropped_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
                             avg = np.mean(cropped_img)
-                            depth_data.append(np.mean(avg))
+                            # avg = self.depth_image[centre_y,centre_x]
+                            cv2.putText(self.cv_img,"%.2f m" %(avg/1000),(left+10 ,top+20),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
+                            depth_data.append(avg)
 
                         except: 
                             print('detection{} error'.format(id))
 
+                print(depth_data)
                 if len(depth_data) != 0:
                     depth_data = np.array(depth_data)
                     minimum_index = np.argmin(depth_data)
