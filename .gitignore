@@ -2,3 +2,4 @@
 /src/yolov4_tiny/Generated_weight
 .vscode/
 /src/knn/data/
+/src/YOLOv5/Dataset/
