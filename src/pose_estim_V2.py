@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import print_function
+from mimetypes import guess_all_extensions
 
 import cv2
 import time  
@@ -18,7 +19,8 @@ class gesture_detect:
         self.depthImage_Subscriber = rospy.Subscriber('/camera/aligned_depth_to_color/image_raw',Image,self.depthImage_Subscriber_Callback)
         self.cameraInfo_subscriber = rospy.Subscriber('/camera/color/camera_info',CameraInfo,self.Info_Subscriber_Callback)
 
-
+        self.human_image_Publisher = rospy.Publisher('/detected_human',Image,queue_size=10)
+        self.human_gesture_Publisher = rospy.Publisher('/detected_human_gesture',String,queue_size=10)
 
         self.color_image = None
         self.depth_image = None
@@ -54,6 +56,12 @@ class gesture_detect:
 
         cv2.imshow('image',img)
         cv2.imshow('depth',self.depth_image)
+        self.human_gesture_Publisher.publish(str(Gesture))
+        try:
+            ros_image = self.bridge.cv2_to_imgmsg(img, "bgr8")
+            self.human_image_Publisher.publish(ros_image)
+        except CvBridgeError as e:
+            print(e)
         if cv2.waitKey(3) & 0xFF == ord('d'):
             print(self.color_image.shape)
             print(self.depth_image.shape)

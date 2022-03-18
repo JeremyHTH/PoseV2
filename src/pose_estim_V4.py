@@ -15,12 +15,13 @@ from cv_bridge import CvBridge, CvBridgeError
 from Pose_util.hand_angle_dataset import hand_angle_dataset
 from yolov4_tiny.yolo import YOLO
 
-class combined_detection():
+class total_operation():
 
     def __init__(self):
         self.cvImage_Subscriber = rospy.Subscriber('/camera/color/image_raw',Image,self.cvImage_Subscriber_Callback)
         self.depthImage_Subscriber = rospy.Subscriber('/camera/aligned_depth_to_color/image_raw',Image,self.depthImage_Subscriber_Callback)
         self.cameraInfo_subscriber = rospy.Subscriber('/camera/color/camera_info',CameraInfo,self.Info_Subscriber_Callback)
+        self.detect_result_subscriber = rospy.Subscriber('/detected_result',String,self.detection_Subscriber_Callback)
 
         self.human_image_Publisher = rospy.Publisher('/detected_human',Image,queue_size=10)
         self.human_gesture_Publisher = rospy.Publisher('/detected_human_gesture',String,queue_size=10)
@@ -37,74 +38,65 @@ class combined_detection():
 
         self.detector = pm.poseDetector()
         self.angle_data = hand_angle_dataset()
-        self.yolo = YOLO()
 
-    def cvImage_Subscriber_Callback(self,data):
-        try:
-            self.color_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+
+
+    def detection_Subscriber_Callback(self,data):
+        # print(data.data)
+        if data.data != '':
+            boxes = self.decode(data.data)
+            minimum_data = [-1,100000,-1]
+            current_color_image = self.color_image 
+            current_depth_image = self.depth_image
             depth_data = []
-
-        except CvBridgeError as e:
-            print(e)
-        else:
-            try:
-                self.PIL_img = PIL.Image.fromarray(cv2.cvtColor(self.color_image,cv2.COLOR_BGR2RGB))
-                self.PIL_img,boxs = self.yolo.detect_image(self.PIL_img)
-                self.cv_img = cv2.cvtColor(np.array(self.PIL_img), cv2.COLOR_RGB2BGR)
-            except:
-                cv2.imshow('image',self.color_image)
-            else:
-                if len(boxs) != 0:
-                    for id, box in enumerate(boxs):
-                        try:
-                            top,left,bottom,right = box[:4]
-                            # cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
-                            centre_y = (top*3+bottom*2)//5
-                            centre_x = (left+right)//2
-                            cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
-                            cropped_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
-                            avg = np.mean(cropped_img)
-                            # avg = self.depth_image[centre_y,centre_x]
-                            cv2.putText(self.cv_img,"%.2f m" %(avg/1000),(left+10 ,top+20),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
-                            depth_data.append(avg)
-
-                        except: 
-                            print('detection{} error'.format(id))
+            if len(boxes) != 0:
+                for id, box in enumerate(boxes):
+                    try:
+                        top,left,bottom,right = box[:4]
+                        # cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
+                        centre_y = (top*3+bottom*2)//5
+                        centre_x = (left+right)//2
+                        cv2.circle(current_color_image,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
+                        cropped_img = current_depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
+                        avg = np.mean(cropped_img)
+                        # avg = self.depth_image[centre_y,centre_x]
+                        cv2.putText(current_color_image,"%.2f m" %(avg/1000),(left+10 ,top+20),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
+                        depth_data.append(avg)
+                    except: 
+                        print('detection{} error'.format(id))
 
                 print(depth_data)
                 if len(depth_data) != 0:
                     depth_data = np.array(depth_data)
                     minimum_index = np.argmin(depth_data)
-                    minimum_index = 0
-                    box = boxs[minimum_index] 
+                    # minimum_index = 0
+                    box = boxes[minimum_index] 
                     top,left,bottom,right = self.angle_data.regulation_box(box,self.image_length,self.image_width)
                     try:
-                        cropped_img = self.color_image[top:bottom,left:right]
+                        cropped_img = current_color_image[top:bottom,left:right]
                         cropped_img = self.detector.findPose(cropped_img,True)
                         lmList = self.detector.findPosition(cropped_img,True)
                         Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
                         depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
-                        cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
-                        cv2.putText(self.cv_img,"gesture" + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
-                        self.human_gesture_Publisher.publish(str(Gesture))
-                        try:
-                            ros_image = self.bridge.cv2_to_imgmsg(cropped_img, "bgr8")
-                            self.human_image_Publisher.publish(ros_image)
-                        except CvBridgeError as e:
-                            print(e)
+                        cv2.putText(current_color_image,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        cv2.putText(current_color_image,"gesture" + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+
                     except:
                         print('pose detection error')
 
                     cv2.imshow('img_detect',cropped_img)
                 
                 # print('depth: {} gesture: {}'.format(depth_of_human/1000,Gesture))
-                cv2.imshow('image',self.cv_img)
+                cv2.imshow('image',self.color_image)
+                cv2.waitKey(1)
 
-        if cv2.waitKey(1) & 0xFF == ord('d'):
-            print(self.color_image.shape)
-            print(self.depth_image.shape)
+    def cvImage_Subscriber_Callback(self,data):
+        try:
+            self.color_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
 
-
+        except CvBridgeError as e:
+            print(e)
+    
     def Info_Subscriber_Callback(self,data):
         self.image_length = int(data.P[2]*2)
         self.image_width = int(data.P[6]*2)
@@ -116,10 +108,18 @@ class combined_detection():
         except CvBridgeError as e:
             print(e)
 
+    def decode(self,data):
+        output = data.split(';')
+        output = list(map(lambda x: x.split(','),output))
+        for index, line in enumerate(output):
+            line = list(map(lambda x:int(x),line))
+            output[index] = line
+        return output
+
 
 def main():
-    rospy.init_node('PostDetectV3', anonymous=True)
-    glo_detection = combined_detection()
+    rospy.init_node('PostDetectV4', anonymous=True)
+    glo_detection = total_operation()
     try:
         rospy.spin()
     except KeyboardInterrupt:
