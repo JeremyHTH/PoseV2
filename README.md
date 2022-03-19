@@ -22,3 +22,14 @@ For pose_estim_V3_1.py
 |Subscriber|/camera/color/camera_info|CameraInfo|
 |Publisher|/detected_human|Image|
 |Publisher|/detected_gesture|String|
+
+## Internal testing
+
+```bash 
+
+roslaunch px4 mavros_posix_sitl.launch
+roslaunch control_gui control_gui.launch
+roslaunch realsense2_camera rs_camera.launch align_depth:=true
+python3 pose_estim_V3_1.py
+
+```
