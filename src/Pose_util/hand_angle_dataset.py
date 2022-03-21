@@ -1,5 +1,6 @@
 from Pose_util.Filter_data import Filter_data
 import math
+import numpy as np
 class hand_angle_dataset:
 
     def __init__(self):
@@ -122,3 +123,11 @@ class hand_angle_dataset:
         bottom  = min(y_max, bottom)
         right   = min(x_max, right)
         return top, left, bottom, right
+
+    def regulation_box_v2(self,box,x_max,y_max):
+        left,top,right,bottom = np.array(box[:4],dtype='int32')
+        top     = max(0, top)
+        left    = max(0, left)
+        bottom  = min(y_max, bottom)
+        right   = min(x_max, right)
+        return left,top,right,bottom

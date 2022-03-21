@@ -53,15 +53,48 @@ class V5_detection():
             global model
             result = model(self.color_image)
             boxes = result.xyxy[0].tolist()
-            boxesP = result.pandas().xyxy[0]
-            print(boxesP)
+            # boxesP = result.pandas().xyxy[0]
+            # print(boxesP)
             for index, box in enumerate(boxes):
                 if box[4] >= 0.6:
-                    x1,y1,x2,y2 = np.array(box[:4],dtype='int32')
-                    # data = list(map(lambda:int))
-                    cropped_img = self.color_image[y1:y2,x1:x2]
-                    cv2.imshow('img{}'.format(index),cropped_img)
                     self.draw_box_label_in_cvImg(box)
+
+                    if box[5] == 0:
+                        left,top,right,bottom = np.array(box[:4],dtype='int32')
+                        centre_y = int((top*3+bottom*2)//5)
+                        centre_x = int((left+right)//2)
+                        cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
+                        cropped_depth_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
+                        avg = np.mean(cropped_depth_img)
+                        cv2.putText(self.cv_img,"%.2f m" %(avg/1000),(int(left+10) ,int(top+20)),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
+                        depth_data.append(avg)
+
+            print(depth_data)
+
+            if len(depth_data) != 0:
+                    depth_data = np.array(depth_data)
+                    minimum_index = np.argmin(depth_data)
+                    minimum_index = 0
+                    box = boxes[minimum_index] 
+                    left,top,right,bottom = self.angle_data.regulation_box_v2(box,self.image_length,self.image_width)
+
+                    
+                    cropped_img = self.color_image[top:bottom,left:right]
+                    cropped_img = self.detector.findPose(cropped_img,True)
+                    lmList = self.detector.findPosition(cropped_img,True)
+                    Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                    #     depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
+                    #     cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                    cv2.putText(self.color_image,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                    self.human_gesture_Publisher.publish(str(Gesture))
+                    try:
+                        ros_image = self.bridge.cv2_to_imgmsg(cropped_img, "bgr8")
+                        self.human_image_Publisher.publish(ros_image)
+                    except CvBridgeError as e:
+                        print(e)
+
+                    # cv2.imshow('cropped_img',cropped_img)
+
 
             cv2.imshow('orginal',self.color_image)
             cv2.waitKey(1)
@@ -95,7 +128,7 @@ def main():
     glo_detection = V5_detection()
     try:
         rospy.spin()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt:   
         print("Shutting down")
     # while not rospy.is_shutdown():
     #     rospy.sleep(100)
