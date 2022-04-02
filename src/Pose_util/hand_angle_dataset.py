@@ -1,3 +1,4 @@
+from pickle import TRUE
 from Pose_util.Filter_data import Filter_data
 import math
 import numpy as np
@@ -21,6 +22,16 @@ class hand_angle_dataset:
             raw_right_arm_angle = math.atan((data[14][2]-data[12][2])/((data[14][1]-data[12][1]) + e)) /math.pi * 180
             raw_left_shoulderToHand_angle = math.atan((data[15][2]-data[11][2])/((data[15][1]-data[11][1]) + e)) /math.pi * 180 
             raw_right_shoulderToHand_angle = math.atan((data[16][2]-data[12][2])/((data[16][1]-data[12][1]) + e)) /math.pi * 180
+
+            if (data[15][2]-data[11][2] > 0) and (data[15][1]-data[11][1] < 0) and (raw_left_shoulderToHand_angle < 0):
+                raw_left_shoulderToHand_angle = 89
+            elif (data[15][2]-data[11][2] < 0) and (data[15][1]-data[11][1] < 0) and (raw_left_shoulderToHand_angle > 0):
+                raw_left_shoulderToHand_angle = -89
+
+            if (data[16][2]-data[12][2] > 0) and (data[16][1]-data[12][1] > 0) and (raw_right_shoulderToHand_angle > 0):
+                raw_left_shoulderToHand_angle = -89
+            elif (data[16][2]-data[12][2] < 0) and (data[16][1]-data[12][1] > 0) and (raw_right_shoulderToHand_angle < 0):
+                raw_left_shoulderToHand_angle = 89
             
             smooth_left_front_arm_angle = self.left_front_arm_angle.smoothed_data(raw_left_front_arm_angle)
             smooth_left_arm_angle = self.left_arm_angle.smoothed_data(raw_left_arm_angle)
@@ -28,16 +39,6 @@ class hand_angle_dataset:
             smooth_right_arm_angle = self.right_arm_angle.smoothed_data(raw_right_arm_angle)
             smooth_left_shoulderToHand_angle = self.left_shoulderToHand_angle.smoothed_data(raw_left_shoulderToHand_angle)
             smooth_right_shoulderToHand_angle = self.right_shoulderToHand_angle.smoothed_data(raw_right_shoulderToHand_angle)
-
-            # if(smooth_left_front_arm_angle > 0 and smooth_left_arm_angle > 0 or smooth_left_front_arm_angle < 0 and smooth_left_arm_angle < 0):
-            #     left_straight = True if abs(smooth_left_arm_angle - smooth_left_front_arm_angle) < 10 else False
-            # else: 
-            #     left_straight = False
-
-            # if(smooth_right_front_arm_angle > 0 and smooth_right_arm_angle > 0 or smooth_right_front_arm_angle < 0 and smooth_right_arm_angle < 0):
-            #     right_straight = True if abs(smooth_right_arm_angle - smooth_right_front_arm_angle) < 10 else False
-            # else:
-            #     right_straight = False
 
             left_coeff,right_coeff, straight =  self.hand_straight(smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle)
 
@@ -50,6 +51,56 @@ class hand_angle_dataset:
             return left_coeff,right_coeff,int(smooth_left_shoulderToHand_angle),int(smooth_right_shoulderToHand_angle), gesture
         else:
             return False,False,-200,-200,-1
+
+    def cal_angle_v2(self,data,box_height=0,box_width=0):
+        e = 0.0000001
+        if(len(data) > 20):
+            if box_height == 0 and box_width == 0:
+                box_height = (data[2][2] + data[5][2] - data[27][2] - data[28][2])//2
+                box_width = (data[11][1] + data[15][1] - data[12][1] -data[16][1])//2
+
+            raw_left_front_arm_angle = math.atan((data[15][2]-data[13][2])/((data[15][1]-data[13][1]) + e)) /math.pi * 180 
+            raw_left_arm_angle = math.atan((data[13][2]-data[11][2])/((data[13][1]-data[11][1]) + e)) /math.pi * 180
+            raw_right_front_arm_angle = math.atan((data[16][2]-data[14][2])/((data[16][1]-data[14][1]) + e)) /math.pi * 180
+            raw_right_arm_angle = math.atan((data[14][2]-data[12][2])/((data[14][1]-data[12][1]) + e)) /math.pi * 180
+            raw_left_shoulderToHand_angle = math.atan((data[15][2]-data[11][2])/((data[15][1]-data[11][1]) + e)) /math.pi * 180 
+            raw_right_shoulderToHand_angle = math.atan((data[16][2]-data[12][2])/((data[16][1]-data[12][1]) + e)) /math.pi * 180
+
+            if (data[15][2]-data[11][2] > 0) and (raw_left_shoulderToHand_angle > 0):
+                raw_left_shoulderToHand_angle = -89
+            elif (data[15][2]-data[11][2] < 0) and (raw_left_shoulderToHand_angle < 0):
+                raw_left_shoulderToHand_angle = 89
+
+            if (data[16][2]-data[12][2] > 0) and (raw_right_shoulderToHand_angle < 0):
+                raw_left_shoulderToHand_angle = 89
+            elif (data[16][2]-data[12][2] < 0) and (raw_right_shoulderToHand_angle > 0):
+                raw_left_shoulderToHand_angle = -89
+            
+            smooth_left_front_arm_angle = self.left_front_arm_angle.smoothed_data(raw_left_front_arm_angle)
+            smooth_left_arm_angle = self.left_arm_angle.smoothed_data(raw_left_arm_angle)
+            smooth_right_front_arm_angle = self.right_front_arm_angle.smoothed_data(raw_right_front_arm_angle)
+            smooth_right_arm_angle = self.right_arm_angle.smoothed_data(raw_right_arm_angle)
+            smooth_left_shoulderToHand_angle = self.left_shoulderToHand_angle.smoothed_data(raw_left_shoulderToHand_angle)
+            smooth_right_shoulderToHand_angle = self.right_shoulderToHand_angle.smoothed_data(raw_right_shoulderToHand_angle)
+
+            if self.skeleton_validation(data):
+
+                left_coeff,right_coeff, straight =  self.hand_straight(smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle)
+
+                if straight:
+                    gesture = self.gesture_identify(smooth_left_shoulderToHand_angle,smooth_right_shoulderToHand_angle)
+                else:
+                    gesture = -1
+            return gesture
+        
+        else:
+            return -1
+
+
+
+    def skeleton_validation(self,data):
+
+        return True
 
     def hand_straight(self,left_angle1,left_angle2,right_angle1,right_angle2): 
         left_different = max(left_angle1, left_angle2) - min(left_angle1,left_angle2)
@@ -64,7 +115,7 @@ class hand_angle_dataset:
         return left_coeff, right_coeff, straight
 
     def gesture_identify(self,left,right):
-        post = None
+        post = -1
         if right > 40 and right < 90:
             if left > -90 and left < -40:
                 post = '1'
@@ -115,6 +166,17 @@ class hand_angle_dataset:
             return (diff_to_centre-lower_length)/(upper_length - lower_length)
         else:
             return 0
+
+
+    def linear_regulation(self,value,low_limit,upper_limit):
+
+        if value < low_limit:
+            return 0
+        elif value > upper_limit:
+            return 1
+        else:
+            return 1/(upper_limit - low_limit)*(value - low_limit)
+
 
     def regulation_box(self,box,x_max,y_max):
         top, left, bottom, right = box[:4]

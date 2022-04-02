@@ -83,8 +83,6 @@ class V5_detection():
                     cropped_img = self.detector.findPose(cropped_img,True)
                     lmList = self.detector.findPosition(cropped_img,True)
                     Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
-                    #     depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
-                    #     cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                     cv2.putText(self.color_image,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                     self.human_gesture_Publisher.publish(str(Gesture))
                     try:

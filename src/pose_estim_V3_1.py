@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import cv2
 import time  
+import threading
 import Pose_util.PoseModule as pm
 import rospy
 import math
@@ -14,6 +15,8 @@ from std_msgs.msg import String
 from cv_bridge import CvBridge, CvBridgeError
 from Pose_util.hand_angle_dataset import hand_angle_dataset
 from yolov4_tiny.yolo import YOLO
+
+callback_active_time = 0
 
 class combined_detection():
 
@@ -43,6 +46,8 @@ class combined_detection():
         try:
             self.color_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
             depth_data = []
+            global callback_active_time
+            callback_active_time = time.time()
 
         except CvBridgeError as e:
             print(e)
@@ -83,6 +88,7 @@ class combined_detection():
                         cropped_img = self.detector.findPose(cropped_img,True)
                         lmList = self.detector.findPosition(cropped_img,True)
                         Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                        Gesture = self.angle_data.cal_angle_v2(lmList)
                         depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
                         cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                         cv2.putText(self.cv_img,"gesture" + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
@@ -116,10 +122,18 @@ class combined_detection():
         except CvBridgeError as e:
             print(e)
 
+def window_watchdog():
+    global callback_active_time
+    while not rospy.is_shutdown():
+        if (time.time() - callback_active_time) > 5:
+            cv2.destroyAllWindows()
+            print('kill')
 
 def main():
     rospy.init_node('PostDetectV3', anonymous=True)
     glo_detection = combined_detection()
+    # t = threading.Thread(target = window_watchdog,daemon = True)
+    # t.start()
     try:
         rospy.spin()
     except KeyboardInterrupt:
