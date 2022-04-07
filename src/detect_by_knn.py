@@ -8,7 +8,7 @@ import csv
 
 def main():
     
-    print(read_csv('src/knn/data.csv'))
+    print(read_csv('knn/data.csv'))
 
 def read_csv(link):
     with open(link,'r',newline='') as f:

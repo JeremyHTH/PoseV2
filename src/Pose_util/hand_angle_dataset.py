@@ -66,15 +66,15 @@ class hand_angle_dataset:
             raw_left_shoulderToHand_angle = math.atan((data[15][2]-data[11][2])/((data[15][1]-data[11][1]) + e)) /math.pi * 180 
             raw_right_shoulderToHand_angle = math.atan((data[16][2]-data[12][2])/((data[16][1]-data[12][1]) + e)) /math.pi * 180
 
-            if (data[15][2]-data[11][2] > 0) and (raw_left_shoulderToHand_angle > 0):
-                raw_left_shoulderToHand_angle = -89
-            elif (data[15][2]-data[11][2] < 0) and (raw_left_shoulderToHand_angle < 0):
+            if (data[15][2]-data[11][2] > 0) and (data[15][1]-data[11][1] < 0) and (raw_left_shoulderToHand_angle < 0):
                 raw_left_shoulderToHand_angle = 89
+            elif (data[15][2]-data[11][2] < 0) and (data[15][1]-data[11][1] < 0) and (raw_left_shoulderToHand_angle > 0):
+                raw_left_shoulderToHand_angle = -89
 
-            if (data[16][2]-data[12][2] > 0) and (raw_right_shoulderToHand_angle < 0):
-                raw_left_shoulderToHand_angle = 89
-            elif (data[16][2]-data[12][2] < 0) and (raw_right_shoulderToHand_angle > 0):
+            if (data[16][2]-data[12][2] > 0) and (data[16][1]-data[12][1] > 0) and (raw_right_shoulderToHand_angle > 0):
                 raw_left_shoulderToHand_angle = -89
+            elif (data[16][2]-data[12][2] < 0) and (data[16][1]-data[12][1] > 0) and (raw_right_shoulderToHand_angle < 0):
+                raw_left_shoulderToHand_angle = 89
             
             smooth_left_front_arm_angle = self.left_front_arm_angle.smoothed_data(raw_left_front_arm_angle)
             smooth_left_arm_angle = self.left_arm_angle.smoothed_data(raw_left_arm_angle)
@@ -83,14 +83,8 @@ class hand_angle_dataset:
             smooth_left_shoulderToHand_angle = self.left_shoulderToHand_angle.smoothed_data(raw_left_shoulderToHand_angle)
             smooth_right_shoulderToHand_angle = self.right_shoulderToHand_angle.smoothed_data(raw_right_shoulderToHand_angle)
 
-            if self.skeleton_validation(data):
+            gesture = self.skeleton_validation(data,smooth_left_shoulderToHand_angle,smooth_right_shoulderToHand_angle,smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle,box_height,box_width)
 
-                left_coeff,right_coeff, straight =  self.hand_straight(smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle)
-
-                if straight:
-                    gesture = self.gesture_identify(smooth_left_shoulderToHand_angle,smooth_right_shoulderToHand_angle)
-                else:
-                    gesture = -1
             return gesture
         
         else:
@@ -98,9 +92,21 @@ class hand_angle_dataset:
 
 
 
-    def skeleton_validation(self,data):
+    def skeleton_validation(self,data,overall_left,overall_right,left_angle1,left_angle2,right_angle1,right_angle2,box_height,box_width):
 
-        return True
+        left_different = max(left_angle1, left_angle2) - min(left_angle1,left_angle2)
+        right_different = max(right_angle1,right_angle2) - min(right_angle1,right_angle2)
+        left_coeff = self.trapezium_fuzzy(left_different,0,10,20)
+        right_coeff = self.trapezium_fuzzy(right_different,0,10,20)
+        
+        straight = True if (max(left_coeff,right_coeff) > 0.8) else False
+
+        
+
+        if straight:
+            return (self.gesture_identify(overall_left,overall_right))
+        else:
+            return -1
 
     def hand_straight(self,left_angle1,left_angle2,right_angle1,right_angle2): 
         left_different = max(left_angle1, left_angle2) - min(left_angle1,left_angle2)
@@ -168,7 +174,7 @@ class hand_angle_dataset:
             return 0
 
 
-    def linear_regulation(self,value,low_limit,upper_limit):
+    def step_fuzzy(self,value,low_limit,upper_limit):
 
         if value < low_limit:
             return 0
@@ -176,6 +182,15 @@ class hand_angle_dataset:
             return 1
         else:
             return 1/(upper_limit - low_limit)*(value - low_limit)
+
+    def fall_step_fuzzy(self,value,low_limit,upper_limit):
+
+        if value < low_limit:
+            return 1
+        elif value > upper_limit:
+            return 0
+        else:
+            return 1/(low_limit - upper_limit)*(value - low_limit)
 
 
     def regulation_box(self,box,x_max,y_max):

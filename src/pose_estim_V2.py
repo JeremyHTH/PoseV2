@@ -21,6 +21,7 @@ class gesture_detect:
 
         self.human_image_Publisher = rospy.Publisher('/detected_human',Image,queue_size=10)
         self.human_gesture_Publisher = rospy.Publisher('/detected_human_gesture',String,queue_size=10)
+        self.human_pos_Publisher = rospy.Publisher('/detected_human_pos',String,queue_size=10)
 
         self.color_image = None
         self.depth_image = None
@@ -56,7 +57,20 @@ class gesture_detect:
 
         cv2.imshow('image',img)
         cv2.imshow('depth',self.depth_image)
+
+
         self.human_gesture_Publisher.publish(str(Gesture))
+
+        if cx < self.image_length/3:
+            turn = -1
+        elif cx > self.image_length/3*2:
+            turn = 1
+        else: 
+            turn = 0
+
+        pos = '{};{}'.format(str(turn),str(int(depth_of_human)))
+        print(pos)
+        self.human_pos_Publisher.publish(pos)
         try:
             ros_image = self.bridge.cv2_to_imgmsg(img, "bgr8")
             self.human_image_Publisher.publish(ros_image)

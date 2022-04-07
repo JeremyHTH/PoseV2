@@ -64,9 +64,9 @@ class V5_detection():
                         centre_y = int((top*3+bottom*2)//5)
                         centre_x = int((left+right)//2)
                         cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
-                        cropped_depth_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
+                        cropped_depth_img = self.depth_image[centre_y-40:centre_y+40,centre_x-40:centre_x+40]
                         avg = np.mean(cropped_depth_img)
-                        cv2.putText(self.cv_img,"%.2f m" %(avg/1000),(int(left+10) ,int(top+20)),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
+                        cv2.putText(self.color_image,"%.2f m" %(avg/1000),(int(left+10) ,int(top+20)),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
                         depth_data.append(avg)
 
             print(depth_data)
@@ -82,7 +82,8 @@ class V5_detection():
                     cropped_img = self.color_image[top:bottom,left:right]
                     cropped_img = self.detector.findPose(cropped_img,True)
                     lmList = self.detector.findPosition(cropped_img,True)
-                    Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                    # Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                    Gesture = self.angle_data.cal_angle_v2(lmList,int(top-bottom),int(right-left))
                     cv2.putText(self.color_image,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                     self.human_gesture_Publisher.publish(str(Gesture))
                     try:

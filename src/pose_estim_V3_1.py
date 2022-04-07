@@ -87,11 +87,13 @@ class combined_detection():
                         cropped_img = self.color_image[top:bottom,left:right]
                         cropped_img = self.detector.findPose(cropped_img,True)
                         lmList = self.detector.findPosition(cropped_img,True)
-                        Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
-                        Gesture = self.angle_data.cal_angle_v2(lmList)
+                        # Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
+                        Gesture = self.angle_data.cal_angle_v2(lmList,int(top-bottom),int(right-left))
                         depth_of_human,cx,cy = self.angle_data.depth_calculation(lmList,self.depth_image,left,top)
                         cv2.putText(self.cv_img,"depth: %.2f m" %(depth_of_human/1000),(10 ,10),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                         cv2.putText(self.cv_img,"gesture" + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        # cv2.putText(self.cv_img,"Left :" + str(Left_angle),(10,50),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
+                        # cv2.putText(self.cv_img,"Right :" + str(Right_angle),(10,70),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                         self.human_gesture_Publisher.publish(str(Gesture))
                         try:
                             ros_image = self.bridge.cv2_to_imgmsg(cropped_img, "bgr8")
