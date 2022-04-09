@@ -54,13 +54,13 @@ class combined_detection():
         else:
             try:
                 self.PIL_img = PIL.Image.fromarray(cv2.cvtColor(self.color_image,cv2.COLOR_BGR2RGB))
-                self.PIL_img,boxs = self.yolo.detect_image(self.PIL_img)
+                self.PIL_img,boxes = self.yolo.detect_image(self.PIL_img)
                 self.cv_img = cv2.cvtColor(np.array(self.PIL_img), cv2.COLOR_RGB2BGR)
             except:
                 cv2.imshow('image',self.color_image)
             else:
-                if len(boxs) != 0:
-                    for id, box in enumerate(boxs):
+                if len(boxes) != 0:
+                    for id, box in enumerate(boxes):
                         try:
                             top,left,bottom,right = box[:4]
                             # cropped_img = self.color_image[box[0]:box[2],box[1]:box[3]]
@@ -81,7 +81,7 @@ class combined_detection():
                     depth_data = np.array(depth_data)
                     minimum_index = np.argmin(depth_data)
                     minimum_index = 0
-                    box = boxs[minimum_index] 
+                    box = boxes[minimum_index] 
                     top,left,bottom,right = self.angle_data.regulation_box(box,self.image_length,self.image_width)
                     try:
                         cropped_img = self.color_image[top:bottom,left:right]

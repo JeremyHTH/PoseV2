@@ -56,7 +56,7 @@ class V5_detection():
             # boxesP = result.pandas().xyxy[0]
             # print(boxesP)
             for index, box in enumerate(boxes):
-                if box[4] >= 0.6:
+                if box[4] >= 0.3:
                     self.draw_box_label_in_cvImg(box)
 
                     if box[5] == 0:
@@ -64,7 +64,7 @@ class V5_detection():
                         centre_y = int((top*3+bottom*2)//5)
                         centre_x = int((left+right)//2)
                         cv2.circle(self.cv_img,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
-                        cropped_depth_img = self.depth_image[centre_y-40:centre_y+40,centre_x-40:centre_x+40]
+                        cropped_depth_img = self.depth_image[centre_y-25:centre_y+25,centre_x-25:centre_x+25]
                         avg = np.mean(cropped_depth_img)
                         cv2.putText(self.color_image,"%.2f m" %(avg/1000),(int(left+10) ,int(top+20)),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
                         depth_data.append(avg)
@@ -74,7 +74,6 @@ class V5_detection():
             if len(depth_data) != 0:
                     depth_data = np.array(depth_data)
                     minimum_index = np.argmin(depth_data)
-                    minimum_index = 0
                     box = boxes[minimum_index] 
                     left,top,right,bottom = self.angle_data.regulation_box_v2(box,self.image_length,self.image_width)
 
@@ -83,7 +82,7 @@ class V5_detection():
                     cropped_img = self.detector.findPose(cropped_img,True)
                     lmList = self.detector.findPosition(cropped_img,True)
                     # Left_straight, Right_straight, Left_angle, Right_angle, Gesture =self.angle_data.cal_angle(lmList)
-                    Gesture = self.angle_data.cal_angle_v2(lmList,int(top-bottom),int(right-left))
+                    Gesture = self.angle_data.cal_angle_v2(lmList,int(bottom-top),int(right-left))
                     cv2.putText(self.color_image,"gesture: " + str(Gesture),(10,30),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,0,128),3)
                     self.human_gesture_Publisher.publish(str(Gesture))
                     try:
@@ -118,7 +117,7 @@ class V5_detection():
         outside = p1[1] - h - 3 >= 0  # label fits outside box
         p2 = p1[0] + w, p1[1] - h - 3 if outside else p1[1] + h + 3
         cv2.rectangle(self.color_image, p1, p2, color, -1, cv2.LINE_AA)  # filled
-        cv2.putText(self.color_image, str(self.detection_label[int(box[5])]), (p1[0], p1[1] - 2 if outside else p1[1] + h + 2), 0, 2 / 3, txt_color,
+        cv2.putText(self.color_image, "{} {}".format(str(self.detection_label[int(box[5])]),str(round(box[4],2))), (p1[0], p1[1] - 2 if outside else p1[1] + h + 2), 0, 2 / 3, txt_color,
                     thickness=tf, lineType=cv2.LINE_AA)
 
 

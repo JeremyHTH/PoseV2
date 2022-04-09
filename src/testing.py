@@ -19,8 +19,14 @@ def talker():
         pub.publish(img)
         rate.sleep()
 
+def trapezium_centroid(c,a,b):
+
+    return (2*a*c + a**2 + c*b + a*b + b**2)/(3*(a+b))
+
 if __name__ == '__main__':
-    try:
-        talker()
-    except rospy.ROSInterruptException:
-        pass
+    # try:
+    #     talker()
+    # except rospy.ROSInterruptException:
+    #     pass
+
+    print(trapezium_centroid(10,20,50))

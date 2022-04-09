@@ -1,3 +1,4 @@
+from turtle import distance
 import numpy as np
 from collections import *
 class KNN:
@@ -21,7 +22,7 @@ class KNN:
         k_nearest_labels = [self.y_train[i] for i in k_indices]
 
         most_common = Counter(k_nearest_labels).most_common(1)
-        return most_common[0]
+        return most_common[0][0]
 
-    def _euclidean_distance(x1,x2):
-        return np.sqrt(np.sum(x1-x2)**2)
+    def _euclidean_distance(self,x1,x2):
+        return np.sqrt(np.sum((x1-x2)**2))  
