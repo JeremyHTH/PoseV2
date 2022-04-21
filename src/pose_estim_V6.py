@@ -9,6 +9,7 @@ import math
 import PIL.Image
 import numpy as np
 import torch
+import ckwrap
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import String
@@ -61,12 +62,13 @@ class V5_detection():
 
                     if box[5] == 0:
                         left,top,right,bottom = np.array(box[:4],dtype='int32')
-                        centre_y = int((top*3+bottom*2)//5)
-                        centre_x = int((left+right)//2)
-                        cv2.circle(self.color_image,(centre_x,centre_y), 5, (0,100,200),cv2.FILLED)
-                        dep = self.depth_image[centre_y,centre_x]
-                        cropped_depth_img = np.array(self.depth_image[centre_y-15:centre_y+15,centre_x-15:centre_x+15])
-                        avg = np.mean(cropped_depth_img)
+                        dep = self.depth_image[top:bottom,left:right]
+                        dep = dep.flatten()
+                        km = ckwrap.ckmeans(dep,4)
+                        buckets = [[],[],[],[]]
+                        for i in range(len(dep)):
+                            buckets[km.labels[i]].append(dep[i])
+                        avg = np.mean(np.array(buckets[1]))
                         cv2.putText(self.color_image,"%.2f m" %(avg/1000),(int(left+10) ,int(top+20)),cv2.FONT_HERSHEY_COMPLEX_SMALL,1,(0,128,0),3)
                         depth_data.append(avg)
 
@@ -123,7 +125,7 @@ class V5_detection():
 
 
 def main():
-    rospy.init_node('PostDetectV5', anonymous=True)
+    rospy.init_node('PostDetectV6', anonymous=True)
     glo_detection = V5_detection()
     try:
         rospy.spin()

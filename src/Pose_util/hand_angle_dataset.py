@@ -83,7 +83,7 @@ class hand_angle_dataset:
             smooth_left_shoulderToHand_angle = self.left_shoulderToHand_angle.smoothed_data(raw_left_shoulderToHand_angle)
             smooth_right_shoulderToHand_angle = self.right_shoulderToHand_angle.smoothed_data(raw_right_shoulderToHand_angle)
 
-            gesture = self.skeleton_validationV2(data,smooth_left_shoulderToHand_angle,smooth_right_shoulderToHand_angle,smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle,box_height,box_width)
+            gesture = self.skeleton_validation(data,smooth_left_shoulderToHand_angle,smooth_right_shoulderToHand_angle,smooth_left_arm_angle,smooth_left_front_arm_angle,smooth_right_arm_angle,smooth_right_front_arm_angle,box_height,box_width)
 
             return gesture
         
